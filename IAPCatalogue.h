@@ -10,9 +10,9 @@
 
 @protocol IAPCatalogueDelegate <NSObject>
 
-- (void)inAppCatalogue:(IAPCatalogue*)catalogue didLoadProductsFromCache:(NSArray*)products;
-- (void)inAppCatalogue:(IAPCatalogue*)catalogue didLoadProducts:(NSArray*)products;
-- (void)inAppCatalogueDidFinishLoading:(IAPCatalogue*)catalogue;
-- (void)inAppCatalogue:(IAPCatalogue*)catalogue didFailWithError:(NSError*)error;
+- (void)iapCatalogue:(IAPCatalogue*)catalogue didLoadProductsFromCache:(NSArray*)products;
+- (void)iapCatalogue:(IAPCatalogue*)catalogue didLoadProducts:(NSArray*)products;
+- (void)iapCatalogueDidFinishLoading:(IAPCatalogue*)catalogue;
+- (void)iapCatalogue:(IAPCatalogue*)catalogue didFailWithError:(NSError*)error;
 
 @end

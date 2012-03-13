@@ -32,8 +32,8 @@
     self.request = request;
     
     if (self.productCache && 
-        [delegate respondsToSelector:@selector(inAppCatalogue:didLoadProductsFromCache:)]) {
-        [delegate inAppCatalogue:self didLoadProductsFromCache:self.productCache];
+        [delegate respondsToSelector:@selector(iapCatalogue:didLoadProductsFromCache:)]) {
+        [delegate iapCatalogue:self didLoadProductsFromCache:self.productCache];
     }
 }
 
@@ -47,28 +47,28 @@
     id delegate = self.delegate;
     self.productCache = response.products;
     
-    if ([delegate respondsToSelector:@selector(inAppCatalogue:didLoadProducts:)]) {
-        [delegate inAppCatalogue:self didLoadProducts:self.productCache];
+    if ([delegate respondsToSelector:@selector(iapCatalogue:didLoadProducts:)]) {
+        [delegate iapCatalogue:self didLoadProducts:self.productCache];
     }
 }
 
 - (void)requestDidFinish:(SKRequest *)request {
     id delegate = self.delegate;
     
-    if ([delegate respondsToSelector:@selector(inAppCatalogueDidFinishLoading:)]) {
-        [delegate inAppCatalogueDidFinishLoading:self];
+    if ([delegate respondsToSelector:@selector(iapCatalogueDidFinishLoading:)]) {
+        [delegate iapCatalogueDidFinishLoading:self];
     }    
 }
 
 - (void)request:(SKRequest *)request didFailWithError:(NSError *)error {
     id delegate = self.delegate;
     
-    if ([delegate respondsToSelector:@selector(inAppCatalogue:didFailWithError:)]) {
-        [delegate inAppCatalogue:self didFailWithError:error];
+    if ([delegate respondsToSelector:@selector(iapCatalogue:didFailWithError:)]) {
+        [delegate iapCatalogue:self didFailWithError:error];
     }
     
-    if ([delegate respondsToSelector:@selector(inAppCatalogueDidFinishLoading:)]) {
-        [delegate inAppCatalogueDidFinishLoading:self];
+    if ([delegate respondsToSelector:@selector(iapCatalogueDidFinishLoading:)]) {
+        [delegate iapCatalogueDidFinishLoading:self];
     }    
 }
 
