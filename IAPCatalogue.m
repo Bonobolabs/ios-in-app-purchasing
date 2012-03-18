@@ -103,5 +103,9 @@ static NSString* productsPlistKey = @"products";
     self.lastUpdatedAt = [NSDate dateWithTimeIntervalSinceNow:0];
 }
 
+//- (void)purchaseProduct:(IAPProduct)product {
+//    SKPayment *payment = [SKPayment paymentWithProductIdentifier:productIdentifier];
+//    [[SKPaymentQueue defaultQueue] addPayment:payment];
+//}
 
 @end

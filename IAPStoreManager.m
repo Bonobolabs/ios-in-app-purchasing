@@ -32,10 +32,11 @@ static NSTimeInterval expiryInterval = 60 * 60 * 24; // 24 hours.
 }
 
 - (void)autoUpdate {
-    [NSTimer scheduledTimerWithTimeInterval:autoUpdateInterval target:self selector:@selector(checkCatalogueNeedsUpdating:) userInfo:nil repeats:YES];
+    [NSTimer scheduledTimerWithTimeInterval:autoUpdateInterval target:self selector:@selector(checkCatalogueNeedsUpdating) userInfo:nil repeats:YES];
+    [self checkCatalogueNeedsUpdating];
 }
 
-- (void)checkCatalogueNeedsUpdating:(NSTimer*)timer {
+- (void)checkCatalogueNeedsUpdating {
     if ([self hasCatalogueExpired:self.catalogue]) {
         [self.catalogue update:self];
     }

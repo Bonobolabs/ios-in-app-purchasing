@@ -4,4 +4,5 @@
 @interface IAPStoreManager : NSObject<IAPCatalogueDelegate>
 + (IAPStoreManager *)sharedInstance;
 - (void)autoUpdate;
+- (IAPProduct*)productForIdentifier:(NSString*)identifier;
 @end
