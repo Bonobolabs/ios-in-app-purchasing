@@ -6,13 +6,16 @@
 @property (nonatomic, readwrite, strong) NSString* identifier;
 @property (nonatomic, readwrite, strong) NSDecimalNumber* price;
 @property (nonatomic, strong) FSMMachine* stateMachine;
-- (void)initStateMachine;
+@property (nonatomic, readwrite, strong) NSString* state;
+- (void)loadStateMachine;
+- (void)unloadStateMachine;
 @end
 
 @implementation IAPProduct
 @synthesize identifier = _identifier;
 @synthesize price = _price;
 @synthesize stateMachine;
+@synthesize state;
 
 // State machine states and events 
 static NSString* StateLoading = @"Loading";
@@ -25,16 +28,34 @@ static NSString* EventSetPrice = @"SetPrice";
     
     if (self) {
         self.identifier = identifier;
-        [self initStateMachine];
+        [self loadStateMachine];
     }
     
     return self;
 }
 
-- (void)initStateMachine { 
+- (void)dealloc {
+    [self unloadStateMachine];
+}
+
+- (void)loadStateMachine { 
     self.stateMachine = [[FSMMachine alloc] initWithState:StateLoading];
     [self.stateMachine addTransition:EventSetPrice startState:StateLoading endState:StateReadyForSale];
     [self.stateMachine addTransition:EventSetPrice startState:StateReadyForSale endState:StateReadyForSale];
+    [self.stateMachine addObserver:self forKeyPath:@"state" options:NSKeyValueObservingOptionNew context:nil];
+}
+
+- (void)unloadStateMachine {
+    if (self.stateMachine) 
+        [self.stateMachine removeObserver:self forKeyPath:@"state"];
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    if (object == self.stateMachine) {
+        if ([@"state" isEqualToString:keyPath]) {
+            self.state = self.stateMachine.state;
+        }
+    }
 }
 
 - (void)updateWithSKProduct:(SKProduct*)skProduct {
