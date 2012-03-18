@@ -1,18 +1,21 @@
 #import <Foundation/Foundation.h>
 #import <StoreKit/StoreKit.h>
 
+@class IAPProduct;
 @protocol IAPCatalogueDelegate;
 
 @interface IAPCatalogue : NSObject<SKProductsRequestDelegate>
-- (void)load:(id<IAPCatalogueDelegate>) delegate;
+@property (nonatomic, readonly, strong) NSDate* lastUpdatedAt;
+
+- (void)update:(id<IAPCatalogueDelegate>) delegate;
 - (void)cancel;
+- (IAPProduct*)productForIdentifier:(NSString*)identifier;
 @end
 
 @protocol IAPCatalogueDelegate <NSObject>
-
-- (void)iapCatalogue:(IAPCatalogue*)catalogue didLoadProductsFromCache:(NSArray*)products;
-- (void)iapCatalogue:(IAPCatalogue*)catalogue didLoadProducts:(NSArray*)products;
-- (void)iapCatalogueDidFinishLoading:(IAPCatalogue*)catalogue;
-- (void)iapCatalogue:(IAPCatalogue*)catalogue didFailWithError:(NSError*)error;
+@optional
+- (void)iapCatalogueDidUpdate:(IAPCatalogue*)catalogue;
+- (void)iapCatalogueDidFinishUpdating:(IAPCatalogue*)catalogue;
+- (void)iapCatalogue:(IAPCatalogue*)catalogue updateFailedWithError:(NSError*)error;
 
 @end
