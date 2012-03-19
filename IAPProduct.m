@@ -18,7 +18,7 @@
 @synthesize catalogue = _catalogue;
 @synthesize price = _price;
 @synthesize stateMachine;
-@synthesize state;
+@synthesize state = _state;
 
 // State machine states and events 
 const NSString* kStateLoading = @"Loading";
@@ -41,7 +41,8 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     if (self) {
         self.identifier = identifier;
         self.catalogue = catalogue;
-        [self loadStateMachine];
+        [self loadStateMachine: kStateLoading];
+        [self restore];
     }
     
     return self;
@@ -51,15 +52,15 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     [self unloadStateMachine];
 }
 
-- (void)loadStateMachine { 
-    self.stateMachine = [[FSMMachine alloc] initWithState:kStateLoading];
+- (void)loadStateMachine:(const NSString*)initialState { 
+    self.stateMachine = [[FSMMachine alloc] initWithState:initialState];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateLoading endState:kStateReadyForSale];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateReadyForSale endState:kStateReadyForSale];
-    [self.stateMachine addTransition:kEventSetError startState:kStateLoading endState:kStateError];
-    [self.stateMachine addTransition:kEventSetError startState:kStatePurchasing endState:kStateError];
     [self.stateMachine addTransition:kEventRecoverToReadyForSale startState:kStateError endState:kStateReadyForSale];
     [self.stateMachine addTransition:kEventRecoverToLoading startState:kStateError endState:kStateLoading];
     [self.stateMachine addTransition:kEventSetPurchasing startState:kStateReadyForSale endState:kStatePurchasing];
+    [self.stateMachine addTransition:kEventSetError startState:kStateLoading endState:kStateError];
+    [self.stateMachine addTransition:kEventSetError startState:kStatePurchasing endState:kStateError];
     [self.stateMachine addTransition:kEventSetPurchased startState:kStatePurchasing endState:kStatePurchased];
     [self.stateMachine addTransition:kEventSetRestored startState:kStatePurchasing endState:kStateRestored];
     
@@ -83,21 +84,21 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 - (void)updateWithSKProduct:(SKProduct*)skProduct {
     self.price = skProduct.price;
     [self.stateMachine applyEvent:kEventSetPrice];
+    [self save];
 }
 
 - (void)updateWithSKPaymentTransaction:(SKPaymentTransaction*)skTransaction {
+    if (self.state != kStatePurchasing)
+        return;
+    
     switch (skTransaction.transactionState) {
         case SKPaymentTransactionStatePurchased: {
             [self.stateMachine applyEvent:kEventSetPurchased];
             break;
         }
         case SKPaymentTransactionStateFailed: {
-            const NSString* recoverEvent = kEventRecoverToLoading;
-            if (self.state == kStatePurchasing) {
-                recoverEvent = kEventRecoverToReadyForSale;
-            }
             [self.stateMachine applyEvent:kEventSetError];
-            [self.stateMachine applyEvent:recoverEvent];
+            [self.stateMachine applyEvent:kEventRecoverToReadyForSale];
             break;
         }
         case SKPaymentTransactionStateRestored: {
@@ -105,10 +106,55 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
             break;
         }
     }
+    [self save];
 }
 
 - (void)updateWithSKPayment:(SKPayment*)skPayment {
     [self.stateMachine applyEvent:kEventSetPurchasing];
+    [self save];
+}
+
+- (NSString*)settingsKey:(NSString*)setting {
+    return [NSString stringWithFormat:@"IAP%@%@", self.identifier, setting];
+}
+
+- (void)save {
+    NSUserDefaults* settings = [NSUserDefaults standardUserDefaults];
+    
+    [settings setValue:self.price forKey:[self settingsKey:@"price"]];
+    [settings setValue:self.state forKey:[self settingsKey:@"state"]];
+}
+
+- (void)restore {
+    NSUserDefaults* settings = [NSUserDefaults standardUserDefaults];
+    
+    self.price = [settings valueForKey:[self settingsKey:@"price"]];
+    NSString* stateSetting = [settings valueForKey:[self settingsKey:@"state"]];
+    const NSString* state = kStateLoading;
+    if ([kStatePurchased isEqualToString:stateSetting]) {
+        state = kStatePurchased;
+    }
+    else if ([kStatePurchasing isEqualToString:stateSetting]) {
+        state = kStatePurchasing;
+    }
+    else if ([kStateReadyForSale isEqualToString:stateSetting]) {
+        state = kStateReadyForSale;
+    }
+    else if ([kStateRestored isEqualToString:stateSetting]) {
+        state = kStateRestored;
+    }
+    [self loadStateMachine:state];
+}
+
+- (const NSString*) stateForPrice:(NSDecimalNumber*)price purchased:(BOOL)purchased {
+    const NSString* state = kStateLoading;
+    if (price != nil) {
+        state = kStateReadyForSale;
+    }
+    if (purchased) {
+        state = kStatePurchased;
+    }
+    return state;
 }
 
 - (BOOL)identifierEquals:(NSString*)identifier {
@@ -142,21 +188,5 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 - (void)purchase {
     [self.catalogue purchaseProduct:self];
 }
-
-// loading => error => loading
-// ready for sale => purchasing => error => loaded
-// ready for sale => purchasing => purchased
-// ready for sale => purchasing => restored
-
-// ready for sale => set price => ready for sale
-//loading => set price => ready for sale
-//loading => received error => error
-//error => loading
-//loaded => purchasing
-//loaded => restoring
-//purchasing => purchased
-//purchasing => purchasing failed
-//purchasing failed => purchasing
-//restoring => restored
 
 @end

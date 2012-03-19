@@ -164,6 +164,7 @@ static NSString* productsPlistKey = @"products";
         if (product) {
             [product updateWithSKPaymentTransaction:transaction];
         }
+        [self.paymentQueue finishTransaction:transaction];
     }
 }
 
