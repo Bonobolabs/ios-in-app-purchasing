@@ -53,6 +53,7 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 }
 
 - (void)loadStateMachine:(const NSString*)initialState { 
+    [self unloadStateMachine];
     self.stateMachine = [[FSMMachine alloc] initWithState:initialState];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateLoading endState:kStateReadyForSale];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateReadyForSale endState:kStateReadyForSale];
