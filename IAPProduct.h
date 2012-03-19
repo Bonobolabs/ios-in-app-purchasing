@@ -18,6 +18,9 @@ extern const NSString* kStateRestored;
 @property (nonatomic, readonly, assign) BOOL isLoading;
 @property (nonatomic, readonly, assign) BOOL isReadyForSale;
 @property (nonatomic, readonly, assign) BOOL isPurchased;
+@property (nonatomic, readonly, assign) BOOL isError;
+@property (nonatomic, readonly, assign) BOOL isPurchasing;
+@property (nonatomic, readonly, assign) BOOL isRestored;
 @property (nonatomic, readonly, strong) const NSString* state;
 
 - (id)initWithCatalogue:(IAPCatalogue*)catalogue identifier:(NSString*)identifier;
@@ -26,4 +29,5 @@ extern const NSString* kStateRestored;
 - (void)updateWithSKProduct:(SKProduct*)skProduct;
 - (void)updateWithSKPaymentTransaction:(SKPaymentTransaction*)skTransaction;
 - (void)updateWithSKPayment:(SKPayment*)skPayment;
+- (void)purchase;
 @end
