@@ -4,12 +4,13 @@
 @class IAPProduct;
 @protocol IAPCatalogueDelegate;
 
-@interface IAPCatalogue : NSObject<SKProductsRequestDelegate>
+@interface IAPCatalogue : NSObject<SKProductsRequestDelegate, SKPaymentTransactionObserver>
 @property (nonatomic, readonly, strong) NSDate* lastUpdatedAt;
 
 - (void)update:(id<IAPCatalogueDelegate>) delegate;
 - (void)cancel;
 - (IAPProduct*)productForIdentifier:(NSString*)identifier;
+- (void)purchaseProduct:(IAPProduct*)product;
 @end
 
 @protocol IAPCatalogueDelegate <NSObject>

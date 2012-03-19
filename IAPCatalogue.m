@@ -3,12 +3,18 @@
 
 @interface IAPCatalogue()
 @property (nonatomic, readwrite, strong) NSDate* lastUpdatedAt;
-@property(nonatomic, strong) SKProductsRequest* request;
-@property(nonatomic, weak) id<IAPCatalogueDelegate> delegate;
-@property(nonatomic, strong) NSDictionary* products;
+@property (nonatomic, strong) SKProductsRequest* request;
+@property (nonatomic, weak) id<IAPCatalogueDelegate> delegate;
+@property (nonatomic, strong) NSDictionary* products;
+@property (nonatomic, strong) NSMutableDictionary* skProducts;
+@property (nonatomic, strong) SKPaymentQueue* paymentQueue;
 
 - (void)initProductsWithPlist;
+- (void)initSKProducts;
 - (void)updateProducts:(NSArray*)skProducts;
+- (void)setupPaymentQueue;
+- (void)tearDownPaymentQueue;
+- (void)purchaseProduct:(IAPProduct*)product skProduct:(SKProduct*)skProduct;
 @end
 
 @implementation IAPCatalogue
@@ -16,6 +22,8 @@
 @synthesize delegate = _delegate;
 @synthesize products = _products;
 @synthesize lastUpdatedAt = _lastUpdatedAt;
+@synthesize skProducts = _skProducts;
+@synthesize paymentQueue;
 
 static NSString* infoPlist = @"IAPInfo";
 static NSString* productsPlistKey = @"products";
@@ -25,9 +33,24 @@ static NSString* productsPlistKey = @"products";
     
     if (self) {
         [self initProductsWithPlist];
+        [self initSKProducts];
+        [self setupPaymentQueue];
     }
     
     return self;
+}
+
+- (void)dealloc {
+    [self tearDownPaymentQueue];
+}
+
+- (void)setupPaymentQueue {
+    self.paymentQueue = [SKPaymentQueue defaultQueue];
+    [self.paymentQueue addTransactionObserver:self];
+}
+
+- (void)tearDownPaymentQueue {
+    [self.paymentQueue removeTransactionObserver:self];
 }
 
 - (void)update:(id<IAPCatalogueDelegate>)delegate {    
@@ -47,6 +70,12 @@ static NSString* productsPlistKey = @"products";
 
 - (IAPProduct*)productForIdentifier:(NSString*)identifier {
     return [self.products objectForKey:identifier];
+}
+
+- (SKProduct*)skProductForIdentifier:(NSString*)identifier {
+    SKProduct* skProduct = nil;
+    skProduct = [self.skProducts valueForKey:identifier];
+    return skProduct;
 }
 
 - (void)productsRequest:(SKProductsRequest *)request didReceiveResponse:(SKProductsResponse *)response {
@@ -92,20 +121,50 @@ static NSString* productsPlistKey = @"products";
     self.products = products;
 }
 
+- (void)initSKProducts {
+    self.skProducts = [NSMutableDictionary dictionary];
+}
+
 - (void)updateProducts:(NSArray*)skProducts {
+    [self.skProducts removeAllObjects];
     for (SKProduct* skProduct in skProducts) {
-        for (IAPProduct* product in [self.products allValues]) {
-            if ([product identifierEquals:skProduct.productIdentifier]) {
-                [product updateWithSKProduct:skProduct];
-            }
-        }
+        IAPProduct* product = [self.products objectForKey:skProduct.productIdentifier];
+        if (product) {
+            [product updateWithSKProduct:skProduct];
+        }     
+        [self.skProducts setObject:skProduct forKey:skProduct.productIdentifier];
     }
     self.lastUpdatedAt = [NSDate dateWithTimeIntervalSinceNow:0];
 }
 
-//- (void)purchaseProduct:(IAPProduct)product {
-//    SKPayment *payment = [SKPayment paymentWithProductIdentifier:productIdentifier];
-//    [[SKPaymentQueue defaultQueue] addPayment:payment];
-//}
+- (void)purchaseProduct:(IAPProduct*)product {
+    SKProduct* skProduct = [self skProductForIdentifier:product.identifier];
+    if (!skProduct) {
+        [NSException raise:@"A product can't be purchased before it has been retrieved from Apple." format:@"Call [IAPCatalogue update:] to retrieve the product from Apple."];
+    }
+    else {
+        [self purchaseProduct:product skProduct:skProduct];
+    }
+}
+        
+- (void)purchaseProduct:(IAPProduct*)product skProduct:(SKProduct*)skProduct {
+    SKPayment *payment = [SKPayment paymentWithProduct:skProduct];
+    [product updateWithSKPayment:payment];
+    [self.paymentQueue addPayment:payment];
+}
+
+- (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions
+{
+    for (SKPaymentTransaction *transaction in transactions)
+    {
+        SKPayment* payment = transaction.payment;
+        NSString* identifier = payment.productIdentifier;
+        
+        IAPProduct* product = [self productForIdentifier:identifier];
+        if (product) {
+            [product updateWithSKPaymentTransaction:transaction];
+        }
+    }
+}
 
 @end
