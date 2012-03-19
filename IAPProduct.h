@@ -3,6 +3,7 @@
 @class SKProduct;
 @class SKPaymentTransaction;
 @class SKPayment;
+@class IAPCatalogue;
 
 extern const NSString* kStateLoading;
 extern const NSString* kStateReadyForSale;
@@ -19,7 +20,7 @@ extern const NSString* kStateRestored;
 @property (nonatomic, readonly, assign) BOOL isPurchased;
 @property (nonatomic, readonly, strong) const NSString* state;
 
-- (id)initWithIdentifier:(NSString*)identifier;
+- (id)initWithCatalogue:(IAPCatalogue*)catalogue identifier:(NSString*)identifier;
 - (BOOL)identifierEquals:(NSString*)identifier;
 
 - (void)updateWithSKProduct:(SKProduct*)skProduct;

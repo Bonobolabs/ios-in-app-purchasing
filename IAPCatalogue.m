@@ -114,7 +114,7 @@ static NSString* productsPlistKey = @"products";
     NSDictionary *plist = [[NSDictionary alloc] initWithContentsOfFile:path];
     NSArray* productIdentifiers = [plist objectForKey:productsPlistKey];
     for (NSString* productIdentifier in productIdentifiers) {
-        IAPProduct* product = [[IAPProduct alloc] initWithIdentifier:productIdentifier];
+        IAPProduct* product = [[IAPProduct alloc] initWithCatalogue:self identifier:productIdentifier];
         [products setObject:product forKey:productIdentifier];
     }
     

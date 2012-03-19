@@ -1,9 +1,11 @@
 #import "IAPProduct.h"
 #import <StoreKit/StoreKit.h>
 #import "FSMMachine.h"
+#import "IAPCatalogue.h"
 
 @interface IAPProduct()
 @property (nonatomic, readwrite, strong) NSString* identifier;
+@property (nonatomic, strong) IAPCatalogue* catalogue;
 @property (nonatomic, readwrite, strong) NSDecimalNumber* price;
 @property (nonatomic, strong) FSMMachine* stateMachine;
 @property (nonatomic, readwrite, strong) const NSString* state;
@@ -13,6 +15,7 @@
 
 @implementation IAPProduct
 @synthesize identifier = _identifier;
+@synthesize catalogue = _catalogue;
 @synthesize price = _price;
 @synthesize stateMachine;
 @synthesize state;
@@ -32,11 +35,12 @@ const NSString* kEventSetPurchasing = @"SetPurchasing";
 const NSString* kEventRecoverToReadyForSale = @"RecoverToReadyForSale";
 const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 
-- (id)initWithIdentifier:(NSString*)identifier {
+- (id)initWithCatalogue:(IAPCatalogue*)catalogue identifier:(NSString*)identifier {
     self = [super init];
     
     if (self) {
         self.identifier = identifier;
+        self.catalogue = catalogue;
         [self loadStateMachine];
     }
     
@@ -119,8 +123,24 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     return [self.stateMachine isInState:kStateReadyForSale];
 }
 
+- (BOOL)isError {
+    return [self.stateMachine isInState:kStateError];
+}
+
+- (BOOL)isPurchasing {
+    return [self.stateMachine isInState:kStatePurchasing];
+}
+
 - (BOOL)isPurchased {
     return [self.stateMachine isInState:kStatePurchased];
+}
+
+- (BOOL)isRestored {
+    return [self.stateMachine isInState:kStateRestored];
+}
+
+- (void)purchase {
+    [self.catalogue purchaseProduct:self];
 }
 
 // loading => error => loading
