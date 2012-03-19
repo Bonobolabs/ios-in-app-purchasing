@@ -134,12 +134,6 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     if ([kStatePurchased isEqualToString:stateSetting]) {
         state = kStatePurchased;
     }
-    else if ([kStatePurchasing isEqualToString:stateSetting]) {
-        state = kStatePurchasing;
-    }
-    else if ([kStateReadyForSale isEqualToString:stateSetting]) {
-        state = kStateReadyForSale;
-    }
     else if ([kStateRestored isEqualToString:stateSetting]) {
         state = kStateRestored;
     }
