@@ -9,7 +9,7 @@
 @property (nonatomic, readwrite, strong) NSDecimalNumber* price;
 @property (nonatomic, strong) FSMMachine* stateMachine;
 @property (nonatomic, readwrite, strong) const NSString* state;
-- (void)loadStateMachine;
+- (void)loadStateMachine:(const NSString*)initialState;
 - (void)unloadStateMachine;
 @end
 
@@ -175,7 +175,7 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 }
 
 - (BOOL)isPurchased {
-    return [self.stateMachine isInState:kStatePurchased];
+    return [self.stateMachine isInState:kStatePurchased] || [self.stateMachine isInState:kStateRestored];
 }
 
 - (BOOL)isRestored {
