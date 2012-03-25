@@ -10,13 +10,8 @@
 @property (nonatomic, readwrite, strong) NSString* price;
 @property (nonatomic, strong) FSMMachine* stateMachine;
 @property (nonatomic, readwrite, strong) const NSString* state;
-<<<<<<< HEAD
 @property (nonatomic, strong) NSMutableArray* observers;
 @property (nonatomic, readwrite, strong) NSUserDefaults* settings;
-=======
-- (void)loadStateMachine:(const NSString*)initialState;
-- (void)unloadStateMachine;
->>>>>>> eaf57e05be71113a0bae198d6aa46f42b73c3c69
 @end
 
 @implementation IAPProduct
