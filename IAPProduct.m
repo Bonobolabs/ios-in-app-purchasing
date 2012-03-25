@@ -2,15 +2,16 @@
 #import <StoreKit/StoreKit.h>
 #import "FSMMachine.h"
 #import "IAPCatalogue.h"
+#import "SKProduct+PriceWithCurrency.h"
 
 @interface IAPProduct()
 @property (nonatomic, readwrite, strong) NSString* identifier;
 @property (nonatomic, strong) IAPCatalogue* catalogue;
-@property (nonatomic, readwrite, strong) NSDecimalNumber* price;
+@property (nonatomic, readwrite, strong) NSString* price;
 @property (nonatomic, strong) FSMMachine* stateMachine;
 @property (nonatomic, readwrite, strong) const NSString* state;
-- (void)loadStateMachine;
-- (void)unloadStateMachine;
+@property (nonatomic, strong) NSMutableArray* observers;
+@property (nonatomic, readwrite, strong) NSUserDefaults* settings;
 @end
 
 @implementation IAPProduct
@@ -19,6 +20,8 @@
 @synthesize price = _price;
 @synthesize stateMachine;
 @synthesize state = _state;
+@synthesize observers;
+@synthesize settings = _settings;
 
 // State machine states and events 
 const NSString* kStateLoading = @"Loading";
@@ -35,13 +38,15 @@ const NSString* kEventSetPurchasing = @"SetPurchasing";
 const NSString* kEventRecoverToReadyForSale = @"RecoverToReadyForSale";
 const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 
-- (id)initWithCatalogue:(IAPCatalogue*)catalogue identifier:(NSString*)identifier {
+- (id)initWithCatalogue:(IAPCatalogue*)catalogue identifier:(NSString*)identifier settings:(NSUserDefaults*)settings {
     self = [super init];
     
     if (self) {
         self.identifier = identifier;
         self.catalogue = catalogue;
         [self loadStateMachine: kStateLoading];
+        self.observers = [NSMutableArray array];
+        self.settings = settings;
         [self restore];
     }
     
@@ -53,6 +58,7 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 }
 
 - (void)loadStateMachine:(const NSString*)initialState { 
+    [self unloadStateMachine];
     self.stateMachine = [[FSMMachine alloc] initWithState:initialState];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateLoading endState:kStateReadyForSale];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateReadyForSale endState:kStateReadyForSale];
@@ -76,13 +82,17 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
     if (object == self.stateMachine) {
         if ([@"state" isEqualToString:keyPath]) {
+            bool stateChanged = self.state != self.stateMachine.state;
             self.state = self.stateMachine.state;
+            if (stateChanged) {
+                [self notifyObserversOfStateChange];
+            }
         }
     }
 }
 
 - (void)updateWithSKProduct:(SKProduct*)skProduct {
-    self.price = skProduct.price;
+    self.price = skProduct.priceWithCurrency;
     [self.stateMachine applyEvent:kEventSetPrice];
     [self save];
 }
@@ -118,18 +128,22 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     return [NSString stringWithFormat:@"IAP%@%@", self.identifier, setting];
 }
 
-- (void)save {
-    NSUserDefaults* settings = [NSUserDefaults standardUserDefaults];
-    
-    [settings setValue:self.price forKey:[self settingsKey:@"price"]];
-    [settings setValue:self.state forKey:[self settingsKey:@"state"]];
+- (NSString*)priceKey {
+    return [self settingsKey:@"price"];
+}
+
+- (NSString*)stateKey {
+    return [self settingsKey:@"state"];
+}
+
+- (void)save  {
+    [self.settings setValue:self.price forKey:[self priceKey]];
+    [self.settings setValue:self.state forKey:[self stateKey]];
 }
 
 - (void)restore {
-    NSUserDefaults* settings = [NSUserDefaults standardUserDefaults];
-    
-    self.price = [settings valueForKey:[self settingsKey:@"price"]];
-    NSString* stateSetting = [settings valueForKey:[self settingsKey:@"state"]];
+    self.price = [self.settings valueForKey:[self priceKey]];
+    NSString* stateSetting = [self.settings valueForKey:[self stateKey]];
     const NSString* state = kStateLoading;
     if ([kStatePurchased isEqualToString:stateSetting]) {
         state = kStatePurchased;
@@ -144,17 +158,6 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
         state = kStateRestored;
     }
     [self loadStateMachine:state];
-}
-
-- (const NSString*) stateForPrice:(NSDecimalNumber*)price purchased:(BOOL)purchased {
-    const NSString* state = kStateLoading;
-    if (price != nil) {
-        state = kStateReadyForSale;
-    }
-    if (purchased) {
-        state = kStatePurchased;
-    }
-    return state;
 }
 
 - (BOOL)identifierEquals:(NSString*)identifier {
@@ -187,6 +190,57 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 
 - (void)purchase {
     [self.catalogue purchaseProduct:self];
+}
+
+- (void)addObserver:(id<IAPProductObserver>)iapProductObserver {
+    [self.observers addObject:[NSValue valueWithNonretainedObject:iapProductObserver]];
+    [self cleanEmptyObservers];
+}
+
+- (void)removeObserver:(id<IAPProductObserver>)iapProductObserver {
+    [self.observers removeObject:[NSValue valueWithNonretainedObject:iapProductObserver]];
+    [self cleanEmptyObservers];
+}
+
+- (void)notifyObserversOfStateChange {
+    for (NSValue* observer in self.observers) {
+        id<IAPProductObserver> iapProductObserver = [observer nonretainedObjectValue];
+        if (!iapProductObserver)
+            continue;
+        
+        if (self.isLoading && [iapProductObserver respondsToSelector:@selector(iapProductJustStartedLoading::)]) {
+            [iapProductObserver iapProductJustStartedLoading:self];
+        }
+        else if (self.isError && [iapProductObserver respondsToSelector:@selector(iapProductJustErrored:)]) {
+            [iapProductObserver iapProductJustErrored:self];
+        }
+        else if (self.isReadyForSale && [iapProductObserver respondsToSelector:@selector(iapProductJustBecameReadyForSale:)]) {
+            [iapProductObserver iapProductJustBecameReadyForSale:self];
+        }
+        else if (self.isPurchased && [iapProductObserver respondsToSelector:@selector(iapProductWasJustPurchased:)]) {
+            [iapProductObserver iapProductWasJustPurchased:self];
+        }
+        else if (self.isPurchasing && [iapProductObserver respondsToSelector:@selector(iapProductIsPurchasing:)]) {
+            [iapProductObserver iapProductIsPurchasing:self];
+        }
+        else if (self.isRestored && [iapProductObserver respondsToSelector:@selector(iapProductWasJustRestored:)]) {
+            [iapProductObserver iapProductWasJustRestored:self];
+        }
+    }
+    
+    [self cleanEmptyObservers];
+}
+
+- (void)cleanEmptyObservers {
+    NSMutableArray* toDelete = [NSMutableArray array];
+    
+    for (NSValue* observer in self.observers) {
+        if (![observer nonretainedObjectValue]) {
+            [toDelete addObject:observer];
+        }
+    }
+    
+    [self.observers removeObjectsInArray:toDelete];
 }
 
 @end

@@ -1,8 +1,8 @@
 #import "IAPStoreManager.h"
+#import "IAPCatalogue.h"
 
 @interface IAPStoreManager()
 @property (nonatomic, strong) IAPCatalogue* catalogue;
-- (BOOL)hasCatalogueExpired:(IAPCatalogue*)catalogue;
 @end
 
 @implementation IAPStoreManager

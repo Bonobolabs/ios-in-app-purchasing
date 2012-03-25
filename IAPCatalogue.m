@@ -1,5 +1,5 @@
 #import "IAPCatalogue.h"
-#import "IAPProduct.h"
+#import "IAPProduct+Friend.h"
 
 @interface IAPCatalogue()
 @property (nonatomic, readwrite, strong) NSDate* lastUpdatedAt;
@@ -8,13 +8,6 @@
 @property (nonatomic, strong) NSDictionary* products;
 @property (nonatomic, strong) NSMutableDictionary* skProducts;
 @property (nonatomic, strong) SKPaymentQueue* paymentQueue;
-
-- (void)initProductsWithPlist;
-- (void)initSKProducts;
-- (void)updateProducts:(NSArray*)skProducts;
-- (void)setupPaymentQueue;
-- (void)tearDownPaymentQueue;
-- (void)purchaseProduct:(IAPProduct*)product skProduct:(SKProduct*)skProduct;
 @end
 
 @implementation IAPCatalogue
@@ -53,7 +46,8 @@ static NSString* productsPlistKey = @"products";
     [self.paymentQueue removeTransactionObserver:self];
 }
 
-- (void)update:(id<IAPCatalogueDelegate>)delegate {    
+- (void)update:(id<IAPCatalogueDelegate>)delegate { 
+    [self cancel];
     self.delegate = delegate; 
     NSSet* productIdentifiers = [NSSet setWithArray:self.products.allKeys];
     SKProductsRequest* request = [[SKProductsRequest alloc] initWithProductIdentifiers:productIdentifiers];
@@ -64,7 +58,8 @@ static NSString* productsPlistKey = @"products";
 
 - (void)cancel {
     self.delegate = nil;
-    [self.request cancel];
+    if (self.request)
+        [self.request cancel];
     self.request = nil;
 }
 
@@ -114,7 +109,7 @@ static NSString* productsPlistKey = @"products";
     NSDictionary *plist = [[NSDictionary alloc] initWithContentsOfFile:path];
     NSArray* productIdentifiers = [plist objectForKey:productsPlistKey];
     for (NSString* productIdentifier in productIdentifiers) {
-        IAPProduct* product = [[IAPProduct alloc] initWithCatalogue:self identifier:productIdentifier];
+        IAPProduct* product = [[IAPProduct alloc] initWithCatalogue:self identifier:productIdentifier settings:[NSUserDefaults standardUserDefaults]];
         [products setObject:product forKey:productIdentifier];
     }
     
