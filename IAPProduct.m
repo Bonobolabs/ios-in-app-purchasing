@@ -10,8 +10,13 @@
 @property (nonatomic, readwrite, strong) NSString* price;
 @property (nonatomic, strong) FSMMachine* stateMachine;
 @property (nonatomic, readwrite, strong) const NSString* state;
+<<<<<<< HEAD
 @property (nonatomic, strong) NSMutableArray* observers;
 @property (nonatomic, readwrite, strong) NSUserDefaults* settings;
+=======
+- (void)loadStateMachine:(const NSString*)initialState;
+- (void)unloadStateMachine;
+>>>>>>> eaf57e05be71113a0bae198d6aa46f42b73c3c69
 @end
 
 @implementation IAPProduct
@@ -62,6 +67,8 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     self.stateMachine = [[FSMMachine alloc] initWithState:initialState];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateLoading endState:kStateReadyForSale];
     [self.stateMachine addTransition:kEventSetPrice startState:kStateReadyForSale endState:kStateReadyForSale];
+    [self.stateMachine addTransition:kEventSetPrice startState:kStatePurchased endState:kStatePurchased];
+    [self.stateMachine addTransition:kEventSetPrice startState:kStateRestored endState:kStateRestored];
     [self.stateMachine addTransition:kEventRecoverToReadyForSale startState:kStateError endState:kStateReadyForSale];
     [self.stateMachine addTransition:kEventRecoverToLoading startState:kStateError endState:kStateLoading];
     [self.stateMachine addTransition:kEventSetPurchasing startState:kStateReadyForSale endState:kStatePurchasing];
@@ -148,12 +155,6 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     if ([kStatePurchased isEqualToString:stateSetting]) {
         state = kStatePurchased;
     }
-    else if ([kStatePurchasing isEqualToString:stateSetting]) {
-        state = kStatePurchasing;
-    }
-    else if ([kStateReadyForSale isEqualToString:stateSetting]) {
-        state = kStateReadyForSale;
-    }
     else if ([kStateRestored isEqualToString:stateSetting]) {
         state = kStateRestored;
     }
@@ -181,7 +182,7 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 }
 
 - (BOOL)isPurchased {
-    return [self.stateMachine isInState:kStatePurchased];
+    return [self.stateMachine isInState:kStatePurchased] || [self.stateMachine isInState:kStateRestored];
 }
 
 - (BOOL)isRestored {
