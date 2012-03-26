@@ -19,6 +19,7 @@
 @end
 
 @protocol IAPProductObserver <NSObject>
+@optional
 - (void)iapProductJustErrored:(IAPProduct*)iapProduct;
 - (void)iapProductJustStartedLoading:(IAPProduct*)iapProduct;
 - (void)iapProductJustBecameReadyForSale:(IAPProduct*)iapProduct;
