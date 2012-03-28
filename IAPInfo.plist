@@ -4,8 +4,8 @@
 <dict>
 	<key>products</key>
 	<array>
-		<string>com.iap.product1</string>
-		<string>com.iap.product2</string>
+		<string>com.bonobolabs.InAppPurchasingExample.SingleBanana</string>
+		<string>com.bonobolabs.InAppPurchasingExample.BunchofBananas</string>
 	</array>
 </dict>
 </plist>
