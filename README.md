@@ -1,4 +1,3 @@
-
 Purpose
 --------------
 
@@ -119,4 +118,4 @@ Usage
 Tests & Sample Project
 --------------
 
-We've split InAppPurchasing out into its own repository to make it easy to add to your project as a submodule. If you'd like to view the sample project and run the tests they are available at https://github.com/Bonobolabs/ios-in-app-purchasing-framework
+InAppPurchasing has been separated out into its own repository to make it easy to add to your project as a submodule. If you'd like to view the sample project and run the tests they are available at https://github.com/Bonobolabs/ios-in-app-purchasing-framework
