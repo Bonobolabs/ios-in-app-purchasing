@@ -4,8 +4,11 @@
 <dict>
 	<key>products</key>
 	<array>
-		<string>com.bonobolabs.InAppPurchasingExample.SingleBanana</string>
-		<string>com.bonobolabs.InAppPurchasingExample.BunchofBananas</string>
+		<string>com.bonobolabs.iboost.hks</string>
+		<string>com.bonobolabs.iboost.digital</string>
+		<string>com.bonobolabs.iboost.carbon</string>
+		<string>com.bonobolabs.iboost.duck</string>
+		<string>com.bonobolabs.iboost.progauge</string>
 	</array>
 </dict>
 </plist>

@@ -170,13 +170,13 @@ static NSString* productsPlistKey = @"products";
 }
 
 - (void)paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error {
-    for (IAPProduct* product in self.products) {
+    for (IAPProduct* product in [self.products allValues]) {
         [product restoreFailedWithError:error];
     }
 }
 
 - (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
-    for (IAPProduct* product in self.products) {
+    for (IAPProduct* product in [self.products allValues]) {
         [product restoreEnded];
     }    
 }

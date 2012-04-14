@@ -39,7 +39,7 @@ const NSString* kEventSetPurchasing = @"SetPurchasing";
 const NSString* kEventRecoverToReadyForSale = @"RecoverToReadyForSale";
 const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 const NSString* kEventRestoreStarted = @"RestoreStarted";
-const NSString* kEventRestoreEnded = @"RestoreStarted";
+const NSString* kEventRestoreEnded = @"RestoreEnded";
 
 - (id)initWithCatalogue:(IAPCatalogue*)catalogue identifier:(NSString*)identifier settings:(NSUserDefaults*)settings {
     self = [super init];
@@ -109,21 +109,22 @@ const NSString* kEventRestoreEnded = @"RestoreStarted";
 }
 
 - (void)updateWithSKPaymentTransaction:(SKPaymentTransaction*)skTransaction {
-    if (self.state != kStatePurchasing)
-        return;
-    
     switch (skTransaction.transactionState) {
         case SKPaymentTransactionStatePurchased: {
-            [self.stateMachine applyEvent:kEventSetPurchased];
+            if (self.state == kStatePurchasing) 
+                [self.stateMachine applyEvent:kEventSetPurchased];
             break;
         }
         case SKPaymentTransactionStateFailed: {
-            [self.stateMachine applyEvent:kEventSetError];
-            [self.stateMachine applyEvent:kEventRecoverToReadyForSale];
+            if (self.state == kStatePurchasing) {
+                [self.stateMachine applyEvent:kEventSetError];
+                [self.stateMachine applyEvent:kEventRecoverToReadyForSale];
+            }
             break;
         }
         case SKPaymentTransactionStateRestored: {
-            [self.stateMachine applyEvent:kEventSetRestored];
+            if (self.state == kStateRestoring)
+                [self.stateMachine applyEvent:kEventSetRestored];
             break;
         }
     }
