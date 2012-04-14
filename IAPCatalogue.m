@@ -148,6 +148,11 @@ static NSString* productsPlistKey = @"products";
     [self.paymentQueue addPayment:payment];
 }
 
+- (void)restoreProduct:(IAPProduct*)product {
+    [self.paymentQueue restoreCompletedTransactions];
+    [product restoreStarted];
+}
+
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions
 {
     for (SKPaymentTransaction *transaction in transactions)
@@ -162,6 +167,18 @@ static NSString* productsPlistKey = @"products";
         if (transaction.transactionState != SKPaymentTransactionStatePurchasing)
             [self.paymentQueue finishTransaction:transaction];
     }
+}
+
+- (void)paymentQueue:(SKPaymentQueue *)queue restoreCompletedTransactionsFailedWithError:(NSError *)error {
+    for (IAPProduct* product in self.products) {
+        [product restoreFailedWithError:error];
+    }
+}
+
+- (void)paymentQueueRestoreCompletedTransactionsFinished:(SKPaymentQueue *)queue {
+    for (IAPProduct* product in self.products) {
+        [product restoreEnded];
+    }    
 }
 
 @end

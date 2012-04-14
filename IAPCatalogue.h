@@ -11,6 +11,7 @@
 - (void)cancel;
 - (IAPProduct*)productForIdentifier:(NSString*)identifier;
 - (void)purchaseProduct:(IAPProduct*)product;
+- (void)restoreProduct:(IAPProduct*)product;
 @end
 
 @protocol IAPCatalogueDelegate <NSObject>

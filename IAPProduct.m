@@ -28,6 +28,7 @@ const NSString* kStateLoading = @"Loading";
 const NSString* kStateReadyForSale = @"ReadyForSale";
 const NSString* kStatePurchased = @"Purchased";
 const NSString* kStatePurchasing = @"Purchasing";
+const NSString* kStateRestoring = @"Restoring";
 const NSString* kStateRestored = @"Restored";
 const NSString* kStateError = @"Error";
 const NSString* kEventSetPrice = @"SetPrice";
@@ -37,6 +38,8 @@ const NSString* kEventSetRestored = @"SetRestored";
 const NSString* kEventSetPurchasing = @"SetPurchasing";
 const NSString* kEventRecoverToReadyForSale = @"RecoverToReadyForSale";
 const NSString* kEventRecoverToLoading = @"RecoverToLoading";
+const NSString* kEventRestoreStarted = @"RestoreStarted";
+const NSString* kEventRestoreEnded = @"RestoreStarted";
 
 - (id)initWithCatalogue:(IAPCatalogue*)catalogue identifier:(NSString*)identifier settings:(NSUserDefaults*)settings {
     self = [super init];
@@ -69,8 +72,14 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     [self.stateMachine addTransition:kEventSetPurchasing startState:kStateReadyForSale endState:kStatePurchasing];
     [self.stateMachine addTransition:kEventSetError startState:kStateLoading endState:kStateError];
     [self.stateMachine addTransition:kEventSetError startState:kStatePurchasing endState:kStateError];
+    [self.stateMachine addTransition:kEventSetError startState:kStateRestoring endState:kStateError];    
     [self.stateMachine addTransition:kEventSetPurchased startState:kStatePurchasing endState:kStatePurchased];
+    [self.stateMachine addTransition:kEventSetRestored startState:kStateLoading endState:kStateRestored];
+    [self.stateMachine addTransition:kEventSetRestored startState:kStateReadyForSale endState:kStateRestored];
     [self.stateMachine addTransition:kEventSetRestored startState:kStatePurchasing endState:kStateRestored];
+    [self.stateMachine addTransition:kEventSetRestored startState:kStateRestoring endState:kStateRestored];
+    [self.stateMachine addTransition:kEventRestoreStarted startState:kStateReadyForSale endState:kStateRestoring];
+    [self.stateMachine addTransition:kEventRestoreEnded startState:kStateRestoring endState:kStateReadyForSale];    
     
     [self.stateMachine addObserver:self forKeyPath:@"state" options:NSKeyValueObservingOptionNew context:nil];
     self.state = self.stateMachine.state;
@@ -124,6 +133,23 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 - (void)updateWithSKPayment:(SKPayment*)skPayment {
     [self.stateMachine applyEvent:kEventSetPurchasing];
     [self save];
+}
+
+- (void)restoreStarted {
+    [self.stateMachine applyEvent:kEventRestoreStarted];
+}
+
+- (void)restoreFailedWithError:(NSError*)error {
+    if (self.state == kStateRestoring) {
+        [self.stateMachine applyEvent:kEventSetError];    
+        [self.stateMachine applyEvent:kEventRecoverToReadyForSale];
+    }
+}
+
+- (void)restoreEnded {
+    if (self.state == kStateRestoring) {
+        [self.stateMachine applyEvent:kEventRestoreEnded];
+    }
 }
 
 - (NSString*)settingsKey:(NSString*)setting {
@@ -184,8 +210,16 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
     return [self.stateMachine isInState:kStateRestored];
 }
 
+- (BOOL)isRestoring {
+    return [self.stateMachine isInState:kStateRestoring];
+}
+
 - (void)purchase {
     [self.catalogue purchaseProduct:self];
+}
+
+- (void)restorePurchase {
+    [self.catalogue restoreProduct:self];
 }
 
 - (void)addObserver:(id<IAPProductObserver>)iapProductObserver {
@@ -201,26 +235,8 @@ const NSString* kEventRecoverToLoading = @"RecoverToLoading";
 - (void)notifyObserversOfStateChange {
     for (NSValue* observer in self.observers) {
         id<IAPProductObserver> iapProductObserver = [observer nonretainedObjectValue];
-        if (!iapProductObserver)
-            continue;
-        
-        if (self.isLoading && [iapProductObserver respondsToSelector:@selector(iapProductJustStartedLoading::)]) {
-            [iapProductObserver iapProductJustStartedLoading:self];
-        }
-        else if (self.isError && [iapProductObserver respondsToSelector:@selector(iapProductJustErrored:)]) {
-            [iapProductObserver iapProductJustErrored:self];
-        }
-        else if (self.isReadyForSale && [iapProductObserver respondsToSelector:@selector(iapProductJustBecameReadyForSale:)]) {
-            [iapProductObserver iapProductJustBecameReadyForSale:self];
-        }
-        else if (self.isPurchased && [iapProductObserver respondsToSelector:@selector(iapProductWasJustPurchased:)]) {
-            [iapProductObserver iapProductWasJustPurchased:self];
-        }
-        else if (self.isPurchasing && [iapProductObserver respondsToSelector:@selector(iapProductIsPurchasing:)]) {
-            [iapProductObserver iapProductIsPurchasing:self];
-        }
-        else if (self.isRestored && [iapProductObserver respondsToSelector:@selector(iapProductWasJustRestored:)]) {
-            [iapProductObserver iapProductWasJustRestored:self];
+        if (iapProductObserver && [iapProductObserver respondsToSelector:@selector(iapProductWasUpdated:)]) {
+            [iapProductObserver iapProductWasUpdated:self];
         }
     }
     

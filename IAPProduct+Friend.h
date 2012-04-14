@@ -20,6 +20,9 @@ extern const NSString* kStateRestored;
 - (void)updateWithSKProduct:(SKProduct*)skProduct;
 - (void)updateWithSKPaymentTransaction:(SKPaymentTransaction*)skTransaction;
 - (void)updateWithSKPayment:(SKPayment*)skPayment;
+- (void)restoreStarted;
+- (void)restoreFailedWithError:(NSError*)error;
+- (void)restoreEnded;
 
 @end
 
