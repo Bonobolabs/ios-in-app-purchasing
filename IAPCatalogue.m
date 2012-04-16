@@ -129,7 +129,9 @@ static NSString* productsPlistKey = @"products";
         }     
         [self.skProducts setObject:skProduct forKey:skProduct.productIdentifier];
     }
-    self.lastUpdatedAt = [NSDate dateWithTimeIntervalSinceNow:0];
+    if ([skProducts count] == [self.products count]) {
+        self.lastUpdatedAt = [NSDate dateWithTimeIntervalSinceNow:0];
+    }
 }
 
 - (void)purchaseProduct:(IAPProduct*)product {
