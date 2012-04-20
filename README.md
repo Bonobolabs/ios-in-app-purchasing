@@ -54,32 +54,12 @@ Usage
         }
 
         // If an error is encountered.
-        - (void)iapProductJustErrored:(IAPProduct*)iapProduct {
-          [self setButtonState]; 
-        }
-
         // If we're requesting the In App Purchase's details from Apple.
-        - (void)iapProductJustStartedLoading:(IAPProduct*)iapProduct {
-          [self setButtonState];    
-        }
-
         // If we've received the In App Purchase's details from Apple.
-        - (void)iapProductJustBecameReadyForSale:(IAPProduct*)iapProduct {
-          [self setButtonState];
-        }
-
         // If a purchase was successfully made.
-        - (void)iapProductWasJustPurchased:(IAPProduct*)iapProduct {
-          [self setButtonState];
-        }
-
         // If a purchase was successfully restored.
-        - (void)iapProductWasJustRestored:(IAPProduct*)iapProduct {
-          [self setButtonState];
-        }
-
         // If a purchase was initiated.
-        - (void)iapProductIsPurchasing:(IAPProduct*)iapProduct {
+        - (void)iapProductWasUpdated:(IAPProduct*)iapProduct {
           [self setButtonState];
         }
 
