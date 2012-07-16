@@ -59,4 +59,12 @@ static NSTimeInterval expiryInterval = 60 * 60 * 24; // 24 hours.
     return [self.catalogue productForIdentifier:identifier];
 }
 
+- (void)restoreAllProducts {
+    [self.catalogue restoreAllProducts];
+}
+
+- (NSDictionary*)products {
+    return self.catalogue.products;
+}
+
 @end

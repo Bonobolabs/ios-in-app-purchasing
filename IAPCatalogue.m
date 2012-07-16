@@ -5,7 +5,7 @@
 @property (nonatomic, readwrite, strong) NSDate* lastUpdatedAt;
 @property (nonatomic, strong) SKProductsRequest* request;
 @property (nonatomic, weak) id<IAPCatalogueDelegate> delegate;
-@property (nonatomic, strong) NSDictionary* products;
+@property (nonatomic, readwrite, strong) NSDictionary* products;
 @property (nonatomic, strong) NSMutableDictionary* skProducts;
 @property (nonatomic, strong) SKPaymentQueue* paymentQueue;
 @end
@@ -129,7 +129,9 @@ static NSString* productsPlistKey = @"products";
         }     
         [self.skProducts setObject:skProduct forKey:skProduct.productIdentifier];
     }
-    self.lastUpdatedAt = [NSDate dateWithTimeIntervalSinceNow:0];
+    if ([skProducts count] == [self.products count]) {
+        self.lastUpdatedAt = [NSDate dateWithTimeIntervalSinceNow:0];
+    }
 }
 
 - (void)purchaseProduct:(IAPProduct*)product {
@@ -151,6 +153,14 @@ static NSString* productsPlistKey = @"products";
 - (void)restoreProduct:(IAPProduct*)product {
     [self.paymentQueue restoreCompletedTransactions];
     [product restoreStarted];
+}
+
+- (void)restoreAllProducts {
+    [self.paymentQueue restoreCompletedTransactions];
+    for (NSString* key in self.products) {
+        IAPProduct* product = [self.products valueForKey:key];
+        [product restoreStarted];
+    }
 }
 
 - (void)paymentQueue:(SKPaymentQueue *)queue updatedTransactions:(NSArray *)transactions
